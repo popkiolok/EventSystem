@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.8.21'
+    id 'net.researchgate.release' version '3.0.2'
 }
 
 group = 'com.nclient'

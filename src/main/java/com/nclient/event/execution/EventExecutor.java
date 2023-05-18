@@ -21,7 +21,7 @@ public abstract class EventExecutor {
 	/**
 	 * The {@link EventContainer} that this listener is attached to.
 	 */
-	protected EventContainer system;
+	protected EventContainer container;
 	/**
 	 * Event executor {@link ExecutorPriority}. Executors with higher priority will be called
 	 * firstly.
@@ -37,7 +37,7 @@ public abstract class EventExecutor {
 	 * @param priority The event executor priority.
 	 */
 	EventExecutor(final Consumer<Event> action, final Class<? extends Event> type,
-			final ExecutorPriority priority) {
+				  final ExecutorPriority priority) {
 		assert ABSTRACT_EVENTS_SUPPORT || !Modifier.isAbstract(type.getModifiers()) :
 				"Unable to create event listener with abstract event type.";
 		this.action = action;
@@ -46,7 +46,7 @@ public abstract class EventExecutor {
 	}
 
 	EventExecutor(final BiConsumer<Event, EventExecutor> action, final Class<? extends Event> type,
-			final ExecutorPriority priority) {
+				  final ExecutorPriority priority) {
 		assert !Modifier.isAbstract(type.getModifiers()) :
 				"Unable to create event listener with abstract event type.";
 		this.action = event -> action.accept(event, this);
@@ -57,8 +57,8 @@ public abstract class EventExecutor {
 	void accept(final Event event) throws EventExecutorException {
 		try {
 			action.accept(type.cast(event));
-		} catch (final Exception e) {
-			throw new EventExecutorException(this, e);
+		} catch (final Throwable e) {
+			throw new EventExecutorException(getName(), e);
 		}
 	}
 
@@ -71,25 +71,27 @@ public abstract class EventExecutor {
 	/**
 	 * Attach event executor to specified {@link EventContainer}.
 	 *
-	 * @param system The {@link EventContainer} to attach to.
+	 * @param container The {@link EventContainer} to attach to.
 	 */
-	final void attachTo(final EventContainer system) {
-		this.system = system;
+	final void attachTo(final EventContainer container) {
+		assert this.container == null :
+				"Reattaching or double attaching the same executor is not supported.";
+		this.container = container;
 	}
 
 	/**
 	 * Gets is this event executor is attached to specified {@link EventContainer}.
 	 *
-	 * @param system The {@link EventContainer} to check for.
+	 * @param container The {@link EventContainer} to check for.
 	 *
 	 * @return True if this event executor is attached to specified {@link EventContainer} false
 	 * otherwise.
 	 */
-	final boolean isAttachedTo(final EventContainer system) {
-		return this.system == system;
+	final boolean isAttachedTo(final EventContainer container) {
+		return this.container == container;
 	}
 
 	public final void detach() {
-		system.detach(this);
+		container.detach(this);
 	}
 }
