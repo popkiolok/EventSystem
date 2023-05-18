@@ -8,7 +8,6 @@ package com.nclient.event.execution;
  */
 public class EventExecutorException extends Exception {
 	EventExecutorException(final String executorName, final Throwable cause) {
-		super(String.format("An error occurred while executing %s.",
-				executorName), cause);
+		super(String.format("An error occurred while executing %s.", executorName), cause);
 	}
 }

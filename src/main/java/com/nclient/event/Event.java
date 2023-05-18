@@ -13,8 +13,7 @@ public class Event {
 
 	// TODO might create EventCancellable?
 	public void cancel() {
-		assert getClass().isAnnotationPresent(Cancellable.class) : "This event is not " +
-				"cancellable!";
+		assert getClass().isAnnotationPresent(Cancellable.class) : "This event is not cancellable!";
 		cancel = true;
 	}
 

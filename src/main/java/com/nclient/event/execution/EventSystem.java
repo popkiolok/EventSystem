@@ -78,7 +78,7 @@ public class EventSystem {
 	}
 
 	/**
-	 * Attach {@link EventExecutor} to this EventManager.
+	 * Attach {@link EventExecutor} to this {@link EventSystem}.
 	 *
 	 * @param executor The {@link EventExecutor} to attach.
 	 */
@@ -92,8 +92,7 @@ public class EventSystem {
 	}
 
 	/**
-	 * Enqueue {@link EventExecutor} to be detached from this {@link EventSystem}. After this
-	 * method
+	 * Enqueue {@link EventExecutor} to be detached from this {@link EventSystem}. After this method
 	 * is called, there is guaranty that executor will not be called until it will be reattached to
 	 * this or another {@link EventSystem}.
 	 *
@@ -110,8 +109,7 @@ public class EventSystem {
 
 	/**
 	 * Allows {@link EventSystem}s to support abstract {@link Event}s. When {@link EventExecutor}
-	 * listening abstract event, it will be called when any of abstract event inheritors are
-	 * called.
+	 * listening abstract event, it will be called when any of abstract event inheritors are called.
 	 * By default, abstract events are not supported.
 	 *
 	 * @param abstractEventsSupport The value to set.

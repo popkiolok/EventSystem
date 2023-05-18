@@ -12,8 +12,8 @@ import java.util.function.Consumer
  */
 class Listener : EventExecutor {
 	constructor(action: Consumer<Event>, type: Class<out Event>,
-						 priority: ExecutorPriority = ExecutorPriority.DEFAULT) : super(action,
-		type, priority)
+				priority: ExecutorPriority = ExecutorPriority.DEFAULT) : super(action, type,
+		priority)
 
 	internal constructor(action: BiConsumer<Event, EventExecutor>, type: Class<out Event>,
 						 priority: ExecutorPriority = ExecutorPriority.DEFAULT) : super(action,

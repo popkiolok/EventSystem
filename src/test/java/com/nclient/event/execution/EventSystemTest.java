@@ -2,9 +2,9 @@ package com.nclient.event.execution;
 
 import com.nclient.event.Cancellable;
 import com.nclient.event.Event;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
@@ -38,9 +38,13 @@ class EventSystemTest {
 				ExecutorPriority.DEFAULT);
 		eventSystemUnderTest.attach(testListener);
 		eventSystemUnderTest.attach(
-				new Task(event -> taskCalled = true, TestEvent.class, ExecutorPriority.DEFAULT,
-						0));
+				new Task(event -> taskCalled = true, TestEvent.class, ExecutorPriority.DEFAULT, 0));
 		listenerCalled = taskCalled = false;
+	}
+
+	@AfterEach
+	void cleanUp() {
+		EventSystem.setAbstractEventsSupport(false);
 	}
 
 	@Test
@@ -57,9 +61,8 @@ class EventSystemTest {
 
 
 	@Test
-	@DisplayName(
-			"given manager with high priority listener that cancel event when call event " +
-					"event is cancelled and other executors is not called")
+	@DisplayName("given manager with high priority listener that cancel event when call event " +
+			"event is cancelled and other executors is not called")
 	void testCallCancel() {
 		// Setup
 		final Event event = new TestEvent();
@@ -93,12 +96,21 @@ class EventSystemTest {
 	}
 
 	@Test
-	void testAttach() {
+	void testAttachListener() {
 		// Run the test
 		eventSystemUnderTest.call(new TestEvent());
 
 		// Verify the results
 		assertTrue(listenerCalled);
+	}
+
+	@Test
+	void testAttachTask() {
+		// Run the test
+		eventSystemUnderTest.call(new TestEvent());
+
+		// Verify the results
+		assertTrue(taskCalled);
 	}
 
 	@Test
@@ -109,5 +121,14 @@ class EventSystemTest {
 
 		// Verify the results
 		assertFalse(listenerCalled);
+	}
+
+	@Test
+	void testSetAbstractEventsSupport() {
+		EventSystem.setAbstractEventsSupport(true);
+
+		assertDoesNotThrow(() -> {
+			new Listener(event -> {}, Event.class, ExecutorPriority.DEFAULT);
+		});
 	}
 }
