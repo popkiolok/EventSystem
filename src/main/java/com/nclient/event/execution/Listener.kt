@@ -20,6 +20,6 @@ class Listener : EventExecutor {
 		type, priority)
 
 	public override fun getName(): String {
-		return String.format("Listener %s #%d", system.name, hashCode())
+		return String.format("Listener %s #%d", container.name, hashCode())
 	}
 }

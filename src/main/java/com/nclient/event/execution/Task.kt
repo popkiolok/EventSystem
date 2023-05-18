@@ -21,13 +21,13 @@ class Task internal constructor(
 	public override fun accept(event: Event) {
 		if (delay == 0) {
 			super.accept(event)
-			system.detach(this)
+			container.detach(this)
 		} else {
 			delay--
 		}
 	}
 
 	public override fun getName(): String {
-		return String.format("Task %s #%d", system.name, hashCode())
+		return String.format("Task %s #%d", container.name, hashCode())
 	}
 }
