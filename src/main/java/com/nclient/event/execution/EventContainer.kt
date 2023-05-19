@@ -33,7 +33,6 @@ class EventContainer @JvmOverloads constructor(val name: String,
 		parent)
 
 	private fun isAttached(executor: EventExecutor): Boolean {
-		println("$executor ${executor.isAttachedTo(this)} ${executor.container}")
 		return executor.isAttachedTo(this) || children.stream()
 			.anyMatch { child: EventContainer -> child.isAttached(executor) }
 	}

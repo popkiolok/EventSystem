@@ -10,16 +10,17 @@ import java.util.Queue;
 import java.util.function.Consumer;
 
 /**
- * Allows to handle and fire events.
+ * Allows handling and fire events.
  *
  * @author NassyLove
  * @since 1.0.0
  */
 public class EventSystem {
 	static boolean ABSTRACT_EVENTS_SUPPORT;
+	static long nextExecutorId;
 
 	final SetMultimap<Class<? extends Event>, EventExecutor> executors = MultimapBuilder.hashKeys()
-			.treeSetValues(Comparator.<EventExecutor>comparingInt(e -> e.getPriority().ordinal()))
+			.treeSetValues(Comparator.comparingLong(EventExecutor::getPriority))
 			.build();
 
 	private final Queue<EventExecutor> toRemove = new LinkedList<>();

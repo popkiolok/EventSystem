@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -34,11 +35,16 @@ class EventSystemTest {
 	void setUp() {
 		initMocks(this);
 		eventSystemUnderTest = new EventSystem(mockErrorAction);
+		EventContainer containerUnderTest = new EventContainer(eventSystemUnderTest);
+
 		testListener = new Listener(event -> listenerCalled = true, TestEvent.class,
 				ExecutorPriority.DEFAULT);
-		eventSystemUnderTest.attach(testListener);
-		eventSystemUnderTest.attach(
-				new Task(event -> taskCalled = true, TestEvent.class, ExecutorPriority.DEFAULT, 0));
+		containerUnderTest.attach(testListener);
+
+		final Task testTask =
+				new Task(event -> taskCalled = true, TestEvent.class, ExecutorPriority.DEFAULT, 0);
+		containerUnderTest.attach(testTask);
+
 		listenerCalled = taskCalled = false;
 	}
 
@@ -75,6 +81,21 @@ class EventSystemTest {
 		assertTrue(result);
 		assertFalse(listenerCalled);
 		assertFalse(taskCalled);
+	}
+
+	@Test
+	void testCallOrder() {
+		final String[] ref = {""};
+		Stream.of(new Listener(event -> ref[0] += "1", TestEvent.class, ExecutorPriority.HIGHEST),
+						new Listener(event -> ref[0] += "2", TestEvent.class, ExecutorPriority.HIGH),
+						new Listener(event -> ref[0] += "3", TestEvent.class, ExecutorPriority.DEFAULT),
+						new Listener(event -> ref[0] += "4", TestEvent.class, ExecutorPriority.LOW),
+						new Listener(event -> ref[0] += "5", TestEvent.class, ExecutorPriority.LOWEST))
+				.forEach(eventSystemUnderTest::attach);
+
+		eventSystemUnderTest.call(new TestEvent());
+
+		assertEquals("12345", ref[0]);
 	}
 
 	@Test
@@ -128,7 +149,8 @@ class EventSystemTest {
 		EventSystem.setAbstractEventsSupport(true);
 
 		assertDoesNotThrow(() -> {
-			new Listener(event -> {}, Event.class, ExecutorPriority.DEFAULT);
+			new Listener(event -> {
+			}, Event.class, ExecutorPriority.DEFAULT);
 		});
 	}
 }

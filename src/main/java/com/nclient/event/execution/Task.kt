@@ -10,13 +10,12 @@ import java.util.function.Consumer
  * @author NassyLove
  * @since 0.0.1
  */
-class Task internal constructor(action: Consumer<Event>, type: Class<out Event>,
-								priority: ExecutorPriority = ExecutorPriority.DEFAULT,
-								private var delay: Int = 0) :
+class Task(action: Consumer<Event>, type: Class<out Event>,
+		   priority: ExecutorPriority = ExecutorPriority.DEFAULT, private var delay: Int = 0) :
 	EventExecutor(action, type, priority) {
 
 	@Throws(EventExecutorException::class)
-	public override fun accept(event: Event) {
+	override fun accept(event: Event) {
 		if (delay == 0) {
 			super.accept(event)
 			container.detach(this)

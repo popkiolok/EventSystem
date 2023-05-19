@@ -23,16 +23,15 @@ public abstract class EventExecutor {
 	 */
 	protected EventContainer container;
 	/**
-	 * Event executor {@link ExecutorPriority}. Executors with higher priority will be called
-	 * firstly.
+	 * Depends on {@link ExecutorPriority}. Executors with higher priority will be called firstly.
 	 */
-	protected final ExecutorPriority priority;
+	protected final long priority;
 
 	/**
 	 * Creates new event executor.
 	 *
 	 * @param action   The {@link Consumer} that will be called when event is fired.
-	 * @param type     The class of the listening event. If abstract events are not supported it
+	 * @param type     The class of the listening event. If abstract events are not supported, it
 	 *                 should not be abstract.
 	 * @param priority The event executor priority.
 	 */
@@ -42,19 +41,19 @@ public abstract class EventExecutor {
 				"Unable to create event listener with abstract event type.";
 		this.action = action;
 		this.type = type;
-		this.priority = priority;
+		this.priority = priority.getValue() + EventSystem.nextExecutorId++;
 	}
 
 	EventExecutor(final BiConsumer<Event, EventExecutor> action, final Class<? extends Event> type,
 				  final ExecutorPriority priority) {
-		assert !Modifier.isAbstract(type.getModifiers()) :
+		assert ABSTRACT_EVENTS_SUPPORT || !Modifier.isAbstract(type.getModifiers()) :
 				"Unable to create event listener with abstract event type.";
 		this.action = event -> action.accept(event, this);
 		this.type = type;
-		this.priority = priority;
+		this.priority = priority.getValue() + EventSystem.nextExecutorId++;
 	}
 
-	void accept(final Event event) throws EventExecutorException {
+	public void accept(final Event event) throws EventExecutorException {
 		try {
 			action.accept(type.cast(event));
 		} catch (final Throwable e) {
@@ -62,7 +61,7 @@ public abstract class EventExecutor {
 		}
 	}
 
-	final ExecutorPriority getPriority() {
+	final long getPriority() {
 		return priority;
 	}
 

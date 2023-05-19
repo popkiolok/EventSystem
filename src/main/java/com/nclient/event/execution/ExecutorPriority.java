@@ -11,10 +11,19 @@ import com.nclient.event.Event;
  * @since 0.0.1
  */
 public enum ExecutorPriority {
-	// Fields order in enum is important because used for sorting listeners.
-	HIGHEST,
-	HIGH,
-	DEFAULT,
-	LOW,
-	LOWEST
+	HIGHEST(0L),
+	HIGH(Long.MAX_VALUE / 5),
+	DEFAULT(2L * (Long.MAX_VALUE / 5)),
+	LOW(3L * (Long.MAX_VALUE / 5)),
+	LOWEST((4L * (Long.MAX_VALUE / 5)));
+
+	private final long value;
+
+	ExecutorPriority(final long value) {
+		this.value = value;
+	}
+
+	public long getValue() {
+		return value;
+	}
 }
