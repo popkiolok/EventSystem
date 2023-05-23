@@ -4,6 +4,7 @@ import com.nclient.event.Event
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.lang.reflect.Method
 
 /**
@@ -12,9 +13,8 @@ import java.lang.reflect.Method
  */
 class EventContainerTest {
 
-	private class TestEvent : Event()
-
 	private lateinit var containerUnderTest: EventContainer
+
 	private lateinit var eventSystem: EventSystem
 	private lateinit var testListener: Listener
 
@@ -92,6 +92,81 @@ class EventContainerTest {
 
 		assertTrue(classWithListener.success)
 	}
+
+	@Test
+	fun `test getEventListeners finds annotated methods`() {
+		// Define a test class with annotated methods
+		class TestClass {
+			@EventListener
+			fun onTestEvent(event: TestEvent) {
+			}
+
+			@EventListener(priority = ExecutorPriority.HIGH)
+			fun onOtherEvent(event: TestEvent, executor: EventExecutor) {
+			}
+		}
+
+		// Get the annotated methods from the test class
+		val eventListeners = getEventListeners(TestClass::class.java)
+
+		// Test that both methods are found
+		assertEquals(2, eventListeners.size)
+	}
+
+	@Test
+	fun `test getEventListeners handles bad parameter count`() {
+		// Define a test class with an annotated method with too many parameters
+		class TestClass {
+			@EventListener
+			fun onTestEvent(event: TestEvent, otherParam: EventExecutor, other: Any) {
+			}
+		}
+
+		// Test that an exception is thrown with a descriptive error message
+		val exception = assertThrows<AssertionError> {
+			getEventListeners(TestClass::class.java)
+		}
+		assertEquals(
+			"Bad EventExecutor onTestEvent in ${TestClass::class.java.name} number of parameters: 3.",
+			exception.message)
+	}
+
+	@Test
+	fun `test getEventListeners handles bad parameter types`() {
+		// Define a test class with an annotated method with incorrect parameter types
+		class TestClass {
+			@EventListener
+			fun onTestEvent(otherEvent: String) {
+			}
+		}
+		// Test that an exception is thrown with a descriptive error message
+		val exception = assertThrows<AssertionError> {
+			getEventListeners(TestClass::class.java)
+		}
+		assertEquals(
+			"Bad EventExecutor onTestEvent in ${TestClass::class.java.name} first parameter type.",
+			exception.message)
+	}
+
+	@Test
+	fun `test getEventListeners handles bad parameter types with executor`() {
+		// Define a test class with an annotated method with incorrect parameter types and an executor
+		class TestClass {
+			@EventListener
+			fun onTestEvent(event: TestEvent, otherParam: Any) {
+			}
+		}
+
+		// Test that an exception is thrown with a descriptive error message
+		val exception = assertThrows<AssertionError> {
+			getEventListeners(TestClass::class.java)
+		}
+		assertEquals(
+			"Bad EventExecutor onTestEvent in ${TestClass::class.java.name} second parameter type.",
+			exception.message)
+	}
+
+	private class TestEvent : Event()
 
 	class ClassWithListener {
 		var success = false

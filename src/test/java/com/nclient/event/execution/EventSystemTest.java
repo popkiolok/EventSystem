@@ -26,7 +26,7 @@ class EventSystemTest {
 	private static class TestEvent extends Event {
 	}
 
-	private EventSystem eventSystemUnderTest;
+	private final EventSystem eventSystemUnderTest = new EventSystem(mockErrorAction);
 	private Listener testListener;
 	private boolean listenerCalled;
 	private boolean taskCalled;
@@ -34,7 +34,6 @@ class EventSystemTest {
 	@BeforeEach
 	void setUp() {
 		initMocks(this);
-		eventSystemUnderTest = new EventSystem(mockErrorAction);
 		EventContainer containerUnderTest = new EventContainer(eventSystemUnderTest);
 
 		testListener = new Listener(event -> listenerCalled = true, TestEvent.class,

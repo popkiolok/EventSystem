@@ -2,6 +2,7 @@ package com.nclient.event.execution
 
 import com.google.common.annotations.VisibleForTesting
 import com.nclient.event.Event
+import one.util.streamex.kotlin.streamEx
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 import java.util.function.BiConsumer
@@ -107,3 +108,27 @@ class EventContainer @JvmOverloads constructor(val name: String,
 		attach(Task(action as Consumer<Event>, type as Class<Event>, priority, delay))
 	}
 }
+
+/**
+ * Gets [EventListener]s in the class.
+ *
+ * @param clazz The class to look for methods.
+ * @return Annotated with [EventListener] [Method] to it annotation map.
+ */
+fun getEventListeners(clazz: Class<*>): Map<Method, EventListener> =
+	clazz.declaredMethods.streamEx.filter {
+		it.isAnnotationPresent(EventListener::class.java)
+	}.toMap { m ->
+		assert(m.parameterCount in 1..2) {
+			"Bad EventExecutor ${m.name} in ${m.declaringClass.name} number of parameters: ${m.parameterCount}."
+		}
+		assert(Event::class.java.isAssignableFrom(m.parameterTypes[0])) {
+			"Bad EventExecutor ${m.name} in ${m.declaringClass.name} first parameter type."
+		}
+		assert((m.parameterCount == 1 || EventExecutor::class.java.isAssignableFrom(
+			m.parameterTypes[1]))) {
+			"Bad EventExecutor ${m.name} in ${m.declaringClass.name} second parameter type."
+		}
+		m.isAccessible = true
+		m.getAnnotation(EventListener::class.java)
+	}
