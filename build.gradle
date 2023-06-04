@@ -2,11 +2,20 @@ plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.8.21'
     id 'net.researchgate.release' version '3.0.2'
+    id 'me.champeau.jmh' version '0.6.8'
 }
 
 group = 'com.nclient'
-version = '1.1.0'
+version = '2.0.0'
 archivesBaseName = "EventSystem"
+
+sourceSets {
+    jmh {
+        java.srcDirs = ['src/jmh/java']
+        resources.srcDirs = ['src/jmh/resources']
+        compileClasspath += sourceSets.main.runtimeClasspath
+    }
+}
 
 repositories {
     mavenCentral()
@@ -19,6 +28,10 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.9.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.mockito:mockito-core:2.7.5'
+
+    jmhImplementation 'org.openjdk.jmh:jmh-core:1.35'
+    jmhImplementation 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     // https://mvnrepository.com/artifact/com.google.guava/guava
