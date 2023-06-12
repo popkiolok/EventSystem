@@ -16,7 +16,7 @@ import static com.nclient.event.execution.EventSystem.ABSTRACT_EVENTS_SUPPORT;
  */
 public abstract class EventExecutor {
 	Consumer<Event> action;
-	final Class<? extends Event> type;
+	final Class<? extends Event> type; // TODO: Rewrite in kotlin for kotlin KClass
 
 	/**
 	 * The {@link EventContainer} that this listener is attached to.
