@@ -46,3 +46,7 @@ test {
 kotlin {
     jvmToolchain(8)
 }
+
+jar {
+    duplicatesStrategy(DuplicatesStrategy.INCLUDE)
+}

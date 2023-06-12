@@ -19,137 +19,135 @@ import static org.mockito.MockitoAnnotations.initMocks;
  * @since 1.0.0
  */
 class EventSystemTest {
-	@Mock
-	private Consumer<EventExecutorException> mockErrorAction;
+    @Mock
+    private Consumer<EventExecutorException> mockErrorAction;
 
-	@Cancellable
-	private static class TestEvent extends Event {
-	}
+    private static class TestEvent extends Cancellable {
+    }
 
-	private final EventSystem eventSystemUnderTest = new EventSystem(mockErrorAction);
-	private Listener testListener;
-	private boolean listenerCalled;
-	private boolean taskCalled;
+    private final EventSystem eventSystemUnderTest = new EventSystem(mockErrorAction);
+    private Listener testListener;
+    private boolean listenerCalled;
+    private boolean taskCalled;
 
-	@BeforeEach
-	void setUp() {
-		initMocks(this);
-		EventContainer containerUnderTest = new EventContainer(eventSystemUnderTest);
+    @BeforeEach
+    void setUp() {
+        initMocks(this);
+        EventContainer containerUnderTest = new EventContainer(eventSystemUnderTest);
 
-		testListener = new Listener(event -> listenerCalled = true, TestEvent.class,
-				ExecutorPriority.DEFAULT);
-		containerUnderTest.attach(testListener);
+        testListener = new Listener(event -> listenerCalled = true, TestEvent.class,
+                ExecutorPriority.DEFAULT);
+        containerUnderTest.attach(testListener);
 
-		final Task testTask =
-				new Task(event -> taskCalled = true, TestEvent.class, ExecutorPriority.DEFAULT, 0);
-		containerUnderTest.attach(testTask);
+        final Task testTask = Task.of(event -> taskCalled = true, TestEvent.class, ExecutorPriority.DEFAULT, 0);
+        containerUnderTest.attach(testTask);
 
-		listenerCalled = taskCalled = false;
-	}
+        listenerCalled = taskCalled = false;
+    }
 
-	@AfterEach
-	void cleanUp() {
-		EventSystem.setAbstractEventsSupport(false);
-	}
+    @AfterEach
+    void cleanUp() {
+        EventSystem.setAbstractEventsSupport(false);
+    }
 
-	@Test
-	void testCall() {
-		// Setup
-		final Event event = new TestEvent();
+    @Test
+    void testCall() {
+        // Setup
+        final Event event = new TestEvent();
 
-		// Run the test
-		final boolean result = eventSystemUnderTest.call(event);
+        // Run the test
+        final boolean result = eventSystemUnderTest.call(event);
 
-		// Verify the results
-		assertFalse(result);
-	}
+        // Verify the results
+        assertFalse(result);
+    }
 
 
-	@Test
-	@DisplayName("given manager with high priority listener that cancel event when call event " +
-			"event is cancelled and other executors is not called")
-	void testCallCancel() {
-		// Setup
-		final Event event = new TestEvent();
-		eventSystemUnderTest.attach(
-				new Listener(Event::cancel, TestEvent.class, ExecutorPriority.HIGHEST));
-		// Run the test
-		final boolean result = eventSystemUnderTest.call(event);
+    @Test
+    @DisplayName("given manager with high priority listener that cancel event when call event " +
+            "event is cancelled and other executors is not called")
+    void testCallCancel() {
+        // Setup
+        final Event event = new TestEvent();
+        eventSystemUnderTest.attach(
+                Listener.of(TestEvent::cancel, TestEvent.class, ExecutorPriority.HIGHEST));
+        // Run the test
+        final boolean result = eventSystemUnderTest.call(event);
 
-		// Verify the results
-		assertTrue(result);
-		assertFalse(listenerCalled);
-		assertFalse(taskCalled);
-	}
+        // Verify the results
+        assertTrue(result);
+        assertFalse(listenerCalled);
+        assertFalse(taskCalled);
+    }
 
-	@Test
-	void testCallOrder() {
-		final String[] ref = {""};
-		Stream.of(new Listener(event -> ref[0] += "1", TestEvent.class, ExecutorPriority.HIGHEST),
-						new Listener(event -> ref[0] += "2", TestEvent.class, ExecutorPriority.HIGH),
-						new Listener(event -> ref[0] += "3", TestEvent.class, ExecutorPriority.DEFAULT),
-						new Listener(event -> ref[0] += "4", TestEvent.class, ExecutorPriority.LOW),
-						new Listener(event -> ref[0] += "5", TestEvent.class, ExecutorPriority.LOWEST))
-				.forEach(eventSystemUnderTest::attach);
+    @Test
+    void testCallOrder() {
+        final String[] ref = {""};
+        Stream.of(new Listener(event -> ref[0] += "1", TestEvent.class, ExecutorPriority.HIGHEST),
+                        new Listener(event -> ref[0] += "2", TestEvent.class, ExecutorPriority.HIGH),
+                        new Listener(event -> ref[0] += "3", TestEvent.class, ExecutorPriority.DEFAULT),
+                        new Listener(event -> ref[0] += "4", TestEvent.class, ExecutorPriority.LOW),
+                        new Listener(event -> ref[0] += "5", TestEvent.class, ExecutorPriority.LOWEST))
+                .forEach(eventSystemUnderTest::attach);
 
-		eventSystemUnderTest.call(new TestEvent());
+        eventSystemUnderTest.call(new TestEvent());
 
-		assertEquals("12345", ref[0]);
-	}
+        assertEquals("12345", ref[0]);
+    }
 
-	@Test
-	void testCountListeners() {
-		// Run the test
-		final int result = eventSystemUnderTest.countListeners();
+    @Test
+    void testCountListeners() {
+        // Run the test
+        final int result = eventSystemUnderTest.countListeners();
 
-		// Verify the results
-		assertEquals(1, result);
-	}
+        // Verify the results
+        assertEquals(1, result);
+    }
 
-	@Test
-	void testCountTasks() {
-		// Run the test
-		final int result = eventSystemUnderTest.countTasks();
+    @Test
+    void testCountTasks() {
+        // Run the test
+        final int result = eventSystemUnderTest.countTasks();
 
-		// Verify the results
-		assertEquals(1, result);
-	}
+        // Verify the results
+        assertEquals(1, result);
+    }
 
-	@Test
-	void testAttachListener() {
-		// Run the test
-		eventSystemUnderTest.call(new TestEvent());
+    @Test
+    void testAttachListener() {
+        // Run the test
+        eventSystemUnderTest.call(new TestEvent());
 
-		// Verify the results
-		assertTrue(listenerCalled);
-	}
+        // Verify the results
+        assertTrue(listenerCalled);
+    }
 
-	@Test
-	void testAttachTask() {
-		// Run the test
-		eventSystemUnderTest.call(new TestEvent());
+    @Test
+    void testAttachTask() {
+        // Run the test
+        eventSystemUnderTest.call(new TestEvent());
 
-		// Verify the results
-		assertTrue(taskCalled);
-	}
+        // Verify the results
+        assertTrue(taskCalled);
+    }
 
-	@Test
-	void testDetach() {
-		// Run the test
-		eventSystemUnderTest.detach(testListener);
-		eventSystemUnderTest.call(new TestEvent());
+    @Test
+    void testDetach() {
+        // Run the test
+        eventSystemUnderTest.detach(testListener);
+        eventSystemUnderTest.call(new TestEvent());
 
-		// Verify the results
-		assertFalse(listenerCalled);
-	}
+        // Verify the results
+        assertFalse(listenerCalled);
+    }
 
-	@Test
-	void testSetAbstractEventsSupport() {
-		EventSystem.setAbstractEventsSupport(true);
+    @Test
+    void testSetAbstractEventsSupport() {
+        EventSystem.setAbstractEventsSupport(true);
 
-		assertDoesNotThrow(() -> {
-			new Listener(event -> {
-			}, Event.class, ExecutorPriority.DEFAULT);
-		});
-	}
+        assertDoesNotThrow(() -> {
+            new Listener(event -> {
+            }, Event.class, ExecutorPriority.DEFAULT);
+        });
+    }
 }

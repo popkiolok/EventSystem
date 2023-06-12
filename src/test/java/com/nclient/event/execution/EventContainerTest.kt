@@ -1,7 +1,8 @@
 package com.nclient.event.execution
 
 import com.nclient.event.Event
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -13,167 +14,153 @@ import java.lang.reflect.Method
  */
 class EventContainerTest {
 
-	private lateinit var containerUnderTest: EventContainer
+    private lateinit var containerUnderTest: EventContainer
 
-	private lateinit var eventSystem: EventSystem
-	private lateinit var testListener: Listener
+    private lateinit var eventSystem: EventSystem
+    private lateinit var testListener: Listener
 
-	@BeforeEach
-	fun setup() {
-		eventSystem = EventSystem {}
-		containerUnderTest = EventContainer(eventSystem)
-		testListener = Listener({ _ -> }, TestEvent::class.java, ExecutorPriority.DEFAULT)
-	}
+    @BeforeEach
+    fun setup() {
+        eventSystem = EventSystem {}
+        containerUnderTest = EventContainer(eventSystem)
+        testListener = Listener({ _ -> }, TestEvent::class.java, ExecutorPriority.DEFAULT)
+    }
 
-	@Test
-	fun `when create container from parent then container has the same event system as parent`() {
-		val container = EventContainer("TestContainerChild", containerUnderTest)
+    @Test
+    fun `when create container from parent then container has the same event system as parent`() {
+        val container = EventContainer("TestContainerChild", containerUnderTest)
 
-		assertEquals(containerUnderTest.eventSystem, container.eventSystem)
-	}
+        assertEquals(containerUnderTest.eventSystem, container.eventSystem)
+    }
 
-	@Test
-	fun `when detach some listener it will be detached from event container and removed from event system`() {
-		containerUnderTest.attach(testListener)
-		containerUnderTest.detach(testListener)
-		assertEquals(0, eventSystem.countListeners())
-	}
+    @Test
+    fun `when detach some listener it will be detached from event container and removed from event system`() {
+        containerUnderTest.attach(testListener)
+        containerUnderTest.detach(testListener)
+        assertEquals(0, eventSystem.countListeners())
+    }
 
-	@Test
-	fun `when detach all detach this container executors`() {
-		containerUnderTest.attach(testListener)
-		containerUnderTest.detachAll()
-		assertEquals(0, eventSystem.countListeners())
-	}
+    @Test
+    fun `when detach all detach this container executors`() {
+        containerUnderTest.attach(testListener)
+        containerUnderTest.detachAll()
+        assertEquals(0, eventSystem.countListeners())
+    }
 
-	@Test
-	fun `when detach all detach child container executors`() {
-		val childContainer = EventContainer(eventSystem, containerUnderTest)
-		childContainer.attach(testListener)
-		containerUnderTest.detachAll()
-		assertEquals(0, eventSystem.countListeners())
-	}
+    @Test
+    fun `when detach all detach child container executors`() {
+        val childContainer = EventContainer(eventSystem, containerUnderTest)
+        childContainer.attach(testListener)
+        containerUnderTest.detachAll()
+        assertEquals(0, eventSystem.countListeners())
+    }
 
-	@Test
-	fun `when attach some listener it will be added to event system and attached to event container`() {        // Run test
-		containerUnderTest.attach(testListener)
+    @Test
+    fun `when attach some listener it will be added to event system and attached to event container`() {        // Run test
+        containerUnderTest.attach(testListener)
 
-		// Verify the results
-		assertTrue(testListener.isAttachedTo(containerUnderTest))
-		assertEquals(1, eventSystem.countListeners())
-	}
+        // Verify the results
+        assertTrue(testListener.isAttachedTo(containerUnderTest))
+        assertEquals(1, eventSystem.countListeners())
+    }
 
-	@Test
-	fun `when attach listener with container method then it is attached to container and event system`() {
-		containerUnderTest.listener({}, TestEvent::class.java)
+    @Test
+    fun `when attach all event listeners are attached and handle events`() {
+        val classWithListener = ClassWithListener()
+        val m = classWithListener.javaClass.getDeclaredMethod("eventListenerUnderTest",
+                TestEvent::class.java)
+        m.isAccessible = true
+        val info = m.getAnnotation(EventListener::class.java)
 
-		assertEquals(1, eventSystem.countListeners())
-	}
+        val map = HashMap<Method, EventListener>()
+        map += m to info
+        containerUnderTest.attachAll(map, classWithListener)
+        eventSystem.call(TestEvent())
 
-	@Test
-	fun `when attach task with container method then it is attached to container and event system`() {
-		containerUnderTest.task({}, TestEvent::class.java)
+        assertTrue(classWithListener.success)
+    }
 
-		assertEquals(1, eventSystem.countTasks())
-	}
+    @Test
+    fun `test getEventListeners finds annotated methods`() {
+        // Define a test class with annotated methods
+        class TestClass {
+            @EventListener
+            fun onTestEvent(event: TestEvent) {
+            }
 
-	@Test
-	fun `when attach all event listeners are attached and handle events`() {
-		val classWithListener = ClassWithListener()
-		val m = classWithListener.javaClass.getDeclaredMethod("eventListenerUnderTest",
-			TestEvent::class.java)
-		m.isAccessible = true
-		val info = m.getAnnotation(EventListener::class.java)
+            @EventListener(priority = ExecutorPriority.HIGH)
+            fun onOtherEvent(event: TestEvent, executor: EventExecutor) {
+            }
+        }
 
-		val map = HashMap<Method, EventListener>()
-		map += m to info
-		containerUnderTest.attachAll(map, classWithListener)
-		eventSystem.call(TestEvent())
+        // Get the annotated methods from the test class
+        val eventListeners = getEventListeners(TestClass::class.java)
 
-		assertTrue(classWithListener.success)
-	}
+        // Test that both methods are found
+        assertEquals(2, eventListeners.size)
+    }
 
-	@Test
-	fun `test getEventListeners finds annotated methods`() {
-		// Define a test class with annotated methods
-		class TestClass {
-			@EventListener
-			fun onTestEvent(event: TestEvent) {
-			}
+    @Test
+    fun `test getEventListeners handles bad parameter count`() {
+        // Define a test class with an annotated method with too many parameters
+        class TestClass {
+            @EventListener
+            fun onTestEvent(event: TestEvent, otherParam: EventExecutor, other: Any) {
+            }
+        }
 
-			@EventListener(priority = ExecutorPriority.HIGH)
-			fun onOtherEvent(event: TestEvent, executor: EventExecutor) {
-			}
-		}
+        // Test that an exception is thrown with a descriptive error message
+        val exception = assertThrows<AssertionError> {
+            getEventListeners(TestClass::class.java)
+        }
+        assertEquals(
+                "Bad EventExecutor onTestEvent in ${TestClass::class.java.name} number of parameters: 3.",
+                exception.message)
+    }
 
-		// Get the annotated methods from the test class
-		val eventListeners = getEventListeners(TestClass::class.java)
+    @Test
+    fun `test getEventListeners handles bad parameter types`() {
+        // Define a test class with an annotated method with incorrect parameter types
+        class TestClass {
+            @EventListener
+            fun onTestEvent(otherEvent: String) {
+            }
+        }
+        // Test that an exception is thrown with a descriptive error message
+        val exception = assertThrows<AssertionError> {
+            getEventListeners(TestClass::class.java)
+        }
+        assertEquals(
+                "Bad EventExecutor onTestEvent in ${TestClass::class.java.name} first parameter type.",
+                exception.message)
+    }
 
-		// Test that both methods are found
-		assertEquals(2, eventListeners.size)
-	}
+    @Test
+    fun `test getEventListeners handles bad parameter types with executor`() {
+        // Define a test class with an annotated method with incorrect parameter types and an executor
+        class TestClass {
+            @EventListener
+            fun onTestEvent(event: TestEvent, otherParam: Any) {
+            }
+        }
 
-	@Test
-	fun `test getEventListeners handles bad parameter count`() {
-		// Define a test class with an annotated method with too many parameters
-		class TestClass {
-			@EventListener
-			fun onTestEvent(event: TestEvent, otherParam: EventExecutor, other: Any) {
-			}
-		}
+        // Test that an exception is thrown with a descriptive error message
+        val exception = assertThrows<AssertionError> {
+            getEventListeners(TestClass::class.java)
+        }
+        assertEquals(
+                "Bad EventExecutor onTestEvent in ${TestClass::class.java.name} second parameter type.",
+                exception.message)
+    }
 
-		// Test that an exception is thrown with a descriptive error message
-		val exception = assertThrows<AssertionError> {
-			getEventListeners(TestClass::class.java)
-		}
-		assertEquals(
-			"Bad EventExecutor onTestEvent in ${TestClass::class.java.name} number of parameters: 3.",
-			exception.message)
-	}
+    private class TestEvent : Event()
 
-	@Test
-	fun `test getEventListeners handles bad parameter types`() {
-		// Define a test class with an annotated method with incorrect parameter types
-		class TestClass {
-			@EventListener
-			fun onTestEvent(otherEvent: String) {
-			}
-		}
-		// Test that an exception is thrown with a descriptive error message
-		val exception = assertThrows<AssertionError> {
-			getEventListeners(TestClass::class.java)
-		}
-		assertEquals(
-			"Bad EventExecutor onTestEvent in ${TestClass::class.java.name} first parameter type.",
-			exception.message)
-	}
+    class ClassWithListener {
+        var success = false
 
-	@Test
-	fun `test getEventListeners handles bad parameter types with executor`() {
-		// Define a test class with an annotated method with incorrect parameter types and an executor
-		class TestClass {
-			@EventListener
-			fun onTestEvent(event: TestEvent, otherParam: Any) {
-			}
-		}
-
-		// Test that an exception is thrown with a descriptive error message
-		val exception = assertThrows<AssertionError> {
-			getEventListeners(TestClass::class.java)
-		}
-		assertEquals(
-			"Bad EventExecutor onTestEvent in ${TestClass::class.java.name} second parameter type.",
-			exception.message)
-	}
-
-	private class TestEvent : Event()
-
-	class ClassWithListener {
-		var success = false
-
-		@EventListener
-		private fun eventListenerUnderTest(event: TestEvent) {
-			success = true
-		}
-	}
+        @EventListener
+        private fun eventListenerUnderTest(event: TestEvent) {
+            success = true
+        }
+    }
 }

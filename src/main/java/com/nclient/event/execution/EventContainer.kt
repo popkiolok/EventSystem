@@ -5,8 +5,6 @@ import com.nclient.event.Event
 import one.util.streamex.kotlin.streamEx
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
-import java.util.function.BiConsumer
-import java.util.function.Consumer
 
 /**
  * Contains a group of [EventExecutor]s with the same [EventSystem].
@@ -18,95 +16,78 @@ import java.util.function.Consumer
  */
 @Suppress("UNCHECKED_CAST")
 class EventContainer @JvmOverloads constructor(val name: String,
-											   @VisibleForTesting internal val eventSystem: EventSystem,
-											   parent: EventContainer? = null) {
-	private val children: MutableCollection<EventContainer> = ArrayList()
+                                               @VisibleForTesting internal val eventSystem: EventSystem,
+                                               parent: EventContainer? = null) {
+    private val children: MutableCollection<EventContainer> = ArrayList()
 
-	constructor(name: String, parent: EventContainer) : this(name, parent.eventSystem, parent)
+    constructor(name: String, parent: EventContainer) : this(name, parent.eventSystem, parent)
 
-	init {
-		parent?.children?.add(this)
-	}
+    init {
+        parent?.children?.add(this)
+    }
 
-	@JvmOverloads
-	constructor(eventSystem: EventSystem, parent: EventContainer? = null) : this(
-		"EventContainer #${count++}${if (parent == null) "" else " : " + parent.name}", eventSystem,
-		parent)
+    @JvmOverloads
+    constructor(eventSystem: EventSystem, parent: EventContainer? = null) : this(
+            "EventContainer #${count++}${if (parent == null) "" else " : " + parent.name}", eventSystem,
+            parent)
 
-	private fun isAttached(executor: EventExecutor): Boolean {
-		return executor.isAttachedTo(this) || children.stream()
-			.anyMatch { child: EventContainer -> child.isAttached(executor) }
-	}
+    private fun isAttached(executor: EventExecutor): Boolean {
+        return executor.isAttachedTo(this) || children.stream()
+                .anyMatch { child: EventContainer -> child.isAttached(executor) }
+    }
 
-	/**
-	 * Attach [EventExecutor] to this event container.
-	 *
-	 * @param executor The [EventExecutor] to attach.
-	 */
-	fun attach(executor: EventExecutor) {
-		eventSystem.attach(executor)
-		executor.attachTo(this)
-	}
+    /**
+     * Attach [EventExecutor] to this event container.
+     *
+     * @param executor The [EventExecutor] to attach.
+     * @throws NullPointerException if the [executor] is null.
+     */
+    fun attach(executor: EventExecutor) {
+        eventSystem.attach(executor)
+        executor.attachTo(this)
+    }
 
-	/**
-	 * Attach all declared methods in [obj] class annotated with
-	 * [EventListener] to this event container.
-	 *
-	 * @param methods Method to EventListener annotation map.
-	 * @param obj Object to call event for.
-	 * @throws IllegalAccessException If method in the map is not accessible.
-	 */
-	fun attachAll(methods: Map<Method, EventListener>, obj: Any) {
-		methods.forEach { (method, info) ->
-			val eventType = method.parameterTypes[0] as Class<Event>
-			val handle = lookup.unreflect(method).bindTo(obj)
-			if (method.parameterCount == 1) {
-				attach(Listener({ event -> handle.invoke(event) }, eventType, info.priority))
-			} else {
-				listenerCallback({ event, callback -> handle.invoke(event, callback) }, eventType,
-					info.priority)
-			}
-		}
-	}
+    /**
+     * Attach all declared methods in [obj] class annotated with
+     * [EventListener] to this event container.
+     *
+     * @param methods Method to EventListener annotation map.
+     * @param obj Object to call event for.
+     * @throws IllegalAccessException If method in the map is not accessible.
+     */
+    fun attachAll(methods: Map<Method, EventListener>, obj: Any) {
+        methods.forEach { (method, info) ->
+            val eventType = method.parameterTypes[0] as Class<Event>
+            val handle = lookup.unreflect(method).bindTo(obj) // TODO lamba metafactory with private method
+            if (method.parameterCount == 1) {
+                attach(Listener({ event -> handle.invoke(event) }, eventType, info.priority))
+            } else {
+                attach(Listener({ event, callback -> handle.invoke(event, callback) }, eventType,
+                        info.priority))
+            }
+        }
+    }
 
-	/**
-	 * Enqueue [EventExecutor] to be detached from the [EventSystem]. After
-	 * this method is called, there is guaranty that executor will not be
-	 * called until it will be reattached to this or another [EventSystem].
-	 *
-	 * @param executor The [EventExecutor] to remove.
-	 */
-	fun detach(executor: EventExecutor) {
-		eventSystem.detach(executor)
-	}
+    /**
+     * Enqueue [EventExecutor] to be detached from the [EventSystem]. After
+     * this method is called, there is guaranty that executor will not be
+     * called until it will be reattached to this or another [EventSystem].
+     *
+     * @param executor The [EventExecutor] to remove.
+     */
+    fun detach(executor: EventExecutor) {
+        eventSystem.detach(executor)
+    }
 
-	fun detachAll() {
-		eventSystem.executors.values().stream().filter { isAttached(it) }
-			.forEach { eventSystem.detach(it) }
-	}
+    fun detachAll() {
+        eventSystem.executors.values().stream().filter { isAttached(it) }
+                .forEach { eventSystem.detach(it) }
+    }
 
-	companion object {
-		private var count = 0
-		private val lookup = MethodHandles.lookup()
-	}
-
-	@JvmOverloads
-	fun <T : Event> listener(action: Consumer<T>, type: Class<T>,
-							 priority: ExecutorPriority = ExecutorPriority.DEFAULT) {
-		attach(Listener(action as Consumer<Event>, type as Class<Event>, priority))
-	}
-
-	@JvmOverloads
-	fun <T : Event> listenerCallback(action: BiConsumer<T, EventExecutor>, type: Class<T>,
-									 priority: ExecutorPriority = ExecutorPriority.DEFAULT) {
-		attach(Listener(action as BiConsumer<Event, EventExecutor>, type as Class<Event>, priority))
-	}
-
-	@JvmOverloads
-	fun <T : Event> task(action: Consumer<T>, type: Class<T>,
-						 priority: ExecutorPriority = ExecutorPriority.DEFAULT, delay: Int = 0) {
-		attach(Task(action as Consumer<Event>, type as Class<Event>, priority, delay))
-	}
+    companion object {
+        private var count = 0
+        private val lookup = MethodHandles.lookup()
+    }
 }
 
 /**
@@ -116,19 +97,19 @@ class EventContainer @JvmOverloads constructor(val name: String,
  * @return Annotated with [EventListener] [Method] to it annotation map.
  */
 fun getEventListeners(clazz: Class<*>): Map<Method, EventListener> =
-	clazz.declaredMethods.streamEx.filter {
-		it.isAnnotationPresent(EventListener::class.java)
-	}.toMap { m ->
-		assert(m.parameterCount in 1..2) {
-			"Bad EventExecutor ${m.name} in ${m.declaringClass.name} number of parameters: ${m.parameterCount}."
-		}
-		assert(Event::class.java.isAssignableFrom(m.parameterTypes[0])) {
-			"Bad EventExecutor ${m.name} in ${m.declaringClass.name} first parameter type."
-		}
-		assert((m.parameterCount == 1 || EventExecutor::class.java.isAssignableFrom(
-			m.parameterTypes[1]))) {
-			"Bad EventExecutor ${m.name} in ${m.declaringClass.name} second parameter type."
-		}
-		m.isAccessible = true
-		m.getAnnotation(EventListener::class.java)
-	}
+        clazz.declaredMethods.streamEx.filter {
+            it.isAnnotationPresent(EventListener::class.java)
+        }.toMap { m ->
+            assert(m.parameterCount in 1..2) {
+                "Bad EventExecutor ${m.name} in ${m.declaringClass.name} number of parameters: ${m.parameterCount}."
+            }
+            assert(Event::class.java.isAssignableFrom(m.parameterTypes[0])) {
+                "Bad EventExecutor ${m.name} in ${m.declaringClass.name} first parameter type."
+            }
+            assert((m.parameterCount == 1 || EventExecutor::class.java.isAssignableFrom(
+                    m.parameterTypes[1]))) {
+                "Bad EventExecutor ${m.name} in ${m.declaringClass.name} second parameter type."
+            }
+            m.isAccessible = true
+            m.getAnnotation(EventListener::class.java)
+        }

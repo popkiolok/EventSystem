@@ -10,51 +10,47 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 1.0.0
  */
 class EventTest {
-	private Event cancellableEventUnderTest;
-	private Event notCancellableEventUnderTest;
+    private CancellableEvent cancellableEventUnderTest;
 
-	@Cancellable
-	private static class CancellableEvent extends Event {
-	}
+	private static class CancellableEvent extends Cancellable {
+    }
 
-	private static class NotCancellableEvent extends Event {
-	}
+    private static class NotCancellableEvent extends Event {
+    }
 
-	@BeforeEach
-	void setUp() {
-		cancellableEventUnderTest = new CancellableEvent();
-		notCancellableEventUnderTest = new NotCancellableEvent();
-	}
+    @BeforeEach
+    void setUp() {
+        cancellableEventUnderTest = new CancellableEvent();
+    }
 
-	@Test
-	void testCancelCancellable() {
-		// Setup
-		// Run the test
-		cancellableEventUnderTest.cancel();
+    @Test
+    void testCancelCancellable() {
+        // Setup
+        // Run the test
+        cancellableEventUnderTest.cancel();
 
-		// Verify the results
-		assertTrue(cancellableEventUnderTest.isCancelled());
-	}
+        // Verify the results
+        assertTrue(cancellableEventUnderTest.getCancelled());
+    }
 
-	@Test
-	void testCancelNotCancellable() {
-		// Verify the results
-		assertThrows(Throwable.class, notCancellableEventUnderTest::cancel);
-		assertFalse(cancellableEventUnderTest.isCancelled());
-	}
+    @Test
+    void testCancelNotCancellable() {
+        // Verify the results
+        assertFalse(cancellableEventUnderTest.getCancelled());
+    }
 
-	@Test
-	void testCancelIfCancellable() {
-		// Setup
-		// Run the test
-		cancellableEventUnderTest.cancelIf(() -> true);
+    @Test
+    void testCancelIfCancellable() {
+        // Setup
+        // Run the test
+        cancellableEventUnderTest.cancelIf(() -> true);
 
-		// Verify the results
-		assertTrue(cancellableEventUnderTest.isCancelled());
-	}
+        // Verify the results
+        assertTrue(cancellableEventUnderTest.getCancelled());
+    }
 
-	@Test
-	void testIsCancelled() {
-		assertFalse(cancellableEventUnderTest.isCancelled());
-	}
+    @Test
+    void testgetCancelled() {
+        assertFalse(cancellableEventUnderTest.getCancelled());
+    }
 }

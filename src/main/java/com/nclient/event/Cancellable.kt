@@ -1,13 +1,23 @@
-package com.nclient.event;
+package com.nclient.event
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import java.util.function.BooleanSupplier
 
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+/**
+ * Cancellable event.
+ *
+ * @author NassyLove
+ * @since 2.0.0
+ */
+open class Cancellable : Event() {
+    override var cancelled: Boolean = false
 
-@Retention(RUNTIME)
-@Target(TYPE)
-public @interface Cancellable {
+    fun cancel() {
+        cancelled = true
+    }
 
+    fun cancelIf(condition: BooleanSupplier) {
+        if (condition.asBoolean) {
+            cancel()
+        }
+    }
 }

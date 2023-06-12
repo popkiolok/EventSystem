@@ -50,7 +50,7 @@ public class EventSystem {
 		for (final EventExecutor executor : executors.get(event.getClass())) {
 			try {
 				executor.accept(event);
-				if (event.isCancelled()) {
+				if (event.getCancelled()) {
 					return true;
 				}
 			} catch (final EventExecutorException e) {
@@ -84,7 +84,7 @@ public class EventSystem {
 	 * @param executor The {@link EventExecutor} to attach.
 	 */
 	void attach(final EventExecutor executor) {
-		executors.put(executor.type, executor);
+		executors.put(executor.type, executor); // TODO is such adding thread safe?
 		if (executor instanceof Listener) {
 			listeners++;
 		} else if (executor instanceof Task) {

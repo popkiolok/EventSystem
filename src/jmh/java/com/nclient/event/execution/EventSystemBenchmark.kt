@@ -32,7 +32,7 @@ open class EventSystemBenchmark {
     @Fork(2, warmups = 1)
     @Benchmark
     fun eventSystemThatAlreadyContains5ListenersRegisterListenerBenchmark(env: BenchmarkEnv3) {
-        env.container.listener({}, BenchmarkEnv3.AnEvent::class.java)
+        env.container.attach(Listener({ _ -> }, BenchmarkEnv3.AnEvent::class))
     }
 
     @State(Scope.Benchmark)
@@ -46,7 +46,7 @@ open class EventSystemBenchmark {
             javaClass.classes.forEach {
                 val numListeners = 3 + Math.random().roundToInt()
                 for (i in 0 until numListeners) {
-                    container.listener({}, it.asSubclass(Event::class.java))
+                    container.attach(Listener({ _ -> }, it.asSubclass(Event::class.java)))
                 }
             }
 
@@ -109,7 +109,7 @@ open class EventSystemBenchmark {
             system = EventSystem {}
             container = EventContainer("BenchmarkContainer", system)
             for (i in 0 until 5) {
-                container.listener({}, AnEvent::class.java, priorities.next())
+                container.attach(Listener({ _ -> }, AnEvent::class.java, priorities.next()))
             }
         }
 
