@@ -11,38 +11,20 @@ import kotlin.reflect.KClass
  * @author NassyLove
  * @since 0.0.1
  */
-class Listener : EventExecutor {
-    constructor(action: Consumer<Event>, type: Class<out Event>,
-                priority: ExecutorPriority = ExecutorPriority.DEFAULT) : super(action, type,
-            priority)
+class Listener<T : Event> : EventExecutor<T> {
+	constructor(type: Class<T>, priority: ExecutorPriority = ExecutorPriority.DEFAULT,
+				action: Consumer<T>) : super(type.kotlin, priority, action::accept)
 
-    constructor(action: BiConsumer<Event, EventExecutor>, type: Class<out Event>,
-                priority: ExecutorPriority = ExecutorPriority.DEFAULT) : super(action,
-            type, priority)
+	constructor(type: Class<T>, priority: ExecutorPriority = ExecutorPriority.DEFAULT,
+				action: BiConsumer<T, EventExecutor<T>>) : super(type.kotlin, priority,
+		action::accept)
 
-    constructor(action: Consumer<Event>, type: KClass<out Event>,
-                priority: ExecutorPriority = ExecutorPriority.DEFAULT) : this(action, type.java,
-            priority)
+	constructor(type: KClass<T>, priority: ExecutorPriority = ExecutorPriority.DEFAULT,
+				action: (T) -> Unit) : super(type, priority, action)
 
-    constructor(action: BiConsumer<Event, EventExecutor>, type: KClass<out Event>,
-                priority: ExecutorPriority = ExecutorPriority.DEFAULT) : this(action,
-            type.java, priority)
+	constructor(type: KClass<T>, priority: ExecutorPriority = ExecutorPriority.DEFAULT,
+				action: (T, EventExecutor<T>) -> Unit) : super(type, priority, action)
 
-    public override fun getName(): String {
-        return String.format("Listener %s #%d", container.name, hashCode())
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    companion object {
-        @JvmStatic
-        @JvmOverloads
-        fun <T : Event> of(action: Consumer<T>, type: Class<T>,
-                           priority: ExecutorPriority = ExecutorPriority.DEFAULT) = Listener(action as Consumer<Event>, type,
-                priority)
-
-        @JvmStatic
-        @JvmOverloads
-        fun <T : Event> of(action: BiConsumer<T, EventExecutor>, type: Class<T>,
-                           priority: ExecutorPriority = ExecutorPriority.DEFAULT) = Listener(action as BiConsumer<Event, EventExecutor>, type, priority)
-    }
+	override val name: String
+		get() = "Listener ${container?.name} #${hashCode()}"
 }

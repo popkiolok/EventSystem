@@ -1,7 +1,8 @@
 package com.nclient.event.execution
 
 import com.nclient.event.Event
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -24,7 +25,7 @@ class EventExecutorTest {
 
 	@Test
 	fun `when accept event and throw exception in handling then executor throw EventExecutorException`() {
-		val executor = Listener({ _ -> throw TestCause() }, TestEvent::class.java)
+		val executor = Listener(TestEvent::class.java) { _ -> throw TestCause() }
 		container.attach(executor)
 
 		assertThrows(EventExecutorException::class.java) {
@@ -34,7 +35,7 @@ class EventExecutorTest {
 
 	@Test
 	fun `when detach then event is not attached to event system`() {
-		val executor = Listener({ _ -> }, TestEvent::class.java)
+		val executor = Listener(TestEvent::class.java) { _ -> }
 		container.attach(executor)
 
 		executor.detach()

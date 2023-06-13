@@ -1,121 +1,109 @@
-package com.nclient.event.execution;
+package com.nclient.event.execution
 
-import com.google.common.collect.MultimapBuilder;
-import com.google.common.collect.SetMultimap;
-import com.nclient.event.Event;
-
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.function.Consumer;
+import com.google.common.collect.MultimapBuilder
+import com.google.common.collect.SetMultimap
+import com.nclient.event.Event
+import java.util.*
+import java.util.function.Consumer
+import kotlin.reflect.KClass
 
 /**
- * Allows handling and fire events.
+ * Allows handling and calling events.
  *
  * @author NassyLove
  * @since 1.0.0
  */
-public class EventSystem {
-	static boolean ABSTRACT_EVENTS_SUPPORT;
-	static long nextExecutorId;
-
-	final SetMultimap<Class<? extends Event>, EventExecutor> executors = MultimapBuilder.hashKeys()
-			.treeSetValues(Comparator.comparingLong(EventExecutor::getPriority))
-			.build();
-
-	private final Queue<EventExecutor> toRemove = new LinkedList<>();
-	private final Consumer<EventExecutorException> errorAction;
-	private int listeners;
-	private int tasks;
-
-	public EventSystem(final Consumer<EventExecutorException> errorAction) {
-		this.errorAction = errorAction;
-	}
+class EventSystem(private val errorAction: Consumer<EventExecutorException>) {
+	val executors: SetMultimap<KClass<out Event>, EventExecutor<*>> =
+		MultimapBuilder.hashKeys().treeSetValues { a: EventExecutor<*>, b: EventExecutor<*> ->
+				a.priority.compareTo(b.priority)
+			}.build()
+	private val toRemove: Queue<EventExecutor<*>> = LinkedList()
+	private var listeners = 0
+	private var tasks = 0
 
 	/**
-	 * Call this {@link Event} event listeners.
+	 * Call this [Event] event listeners.
 	 *
-	 * @param event The {@link Event} to call.
-	 *
+	 * @param event The [Event] to call.
 	 * @return true if event is canceled, false otherwise.
 	 */
-	public boolean call(final Event event) {
-		synchronized (toRemove) {
+	fun call(event: Event): Boolean {
+		synchronized(toRemove) {
 			while (!toRemove.isEmpty()) {
-				final EventExecutor executor = toRemove.poll();
-				executors.remove(executor.type, executor);
+				val executor = toRemove.poll()
+				executors.remove(executor.type, executor)
 			}
 		}
-
-		for (final EventExecutor executor : executors.get(event.getClass())) {
+		for (executor in executors[event::class]) {
 			try {
-				executor.accept(event);
-				if (event.getCancelled()) {
-					return true;
+				executor.accept(event)
+				if (event.cancelled) {
+					return true
 				}
-			} catch (final EventExecutorException e) {
-				errorAction.accept(e);
+			} catch (e: EventExecutorException) {
+				errorAction.accept(e)
 			}
 		}
-		return false;
+		return false
 	}
 
 	/**
-	 * Gets the number of listeners currently attached to this event manager.
+	 * Gets the number of listeners currently attached.
 	 *
-	 * @return The number of listeners currently attached to this event manager.
+	 * @return The number of listeners currently attached.
 	 */
-	public int countListeners() {
-		return listeners;
+	fun countListeners(): Int {
+		return listeners
 	}
 
 	/**
-	 * Gets the number of tasks currently attached to this event manager.
+	 * Gets the number of tasks currently attached.
 	 *
-	 * @return The number of tasks currently attached to this event manager.
+	 * @return The number of tasks currently attached.
 	 */
-	public int countTasks() {
-		return tasks;
+	fun countTasks(): Int {
+		return tasks
 	}
 
 	/**
-	 * Attach {@link EventExecutor} to this {@link EventSystem}.
+	 * Attach [EventExecutor] to this [EventSystem].
 	 *
-	 * @param executor The {@link EventExecutor} to attach.
+	 * @param executor The [EventExecutor] to attach.
 	 */
-	void attach(final EventExecutor executor) {
-		executors.put(executor.type, executor); // TODO is such adding thread safe?
-		if (executor instanceof Listener) {
-			listeners++;
-		} else if (executor instanceof Task) {
-			tasks++;
+	fun attach(executor: EventExecutor<*>) {
+		executors.put(executor.type, executor) // TODO is such adding thread safe?
+		if (executor is Listener<*>) {
+			listeners++
+		} else if (executor is Task) {
+			tasks++
 		}
 	}
 
 	/**
-	 * Enqueue {@link EventExecutor} to be detached from this {@link EventSystem}. After this method
-	 * is called, there is guaranty that executor will not be called until it will be reattached to
-	 * this or another {@link EventSystem}.
+	 * Enqueue [EventExecutor] to be detached from this [EventSystem]. After
+	 * this method is called, there is guaranty that executor will not be
+	 * called until it will be reattached to this or another [EventSystem].
 	 *
-	 * @param executor The {@link EventExecutor} to remove.
+	 * @param executor The [EventExecutor] to remove.
 	 */
-	void detach(final EventExecutor executor) {
-		toRemove.offer(executor);
-		if (executor instanceof Listener) {
-			listeners--;
-		} else if (executor instanceof Task) {
-			tasks--;
+	fun detach(executor: EventExecutor<*>) {
+		toRemove.offer(executor)
+		if (executor is Listener<*>) {
+			listeners--
+		} else if (executor is Task<*>) {
+			tasks--
 		}
 	}
 
-	/**
-	 * Allows {@link EventSystem}s to support abstract {@link Event}s. When {@link EventExecutor}
-	 * listening abstract event, it will be called when any of abstract event inheritors are called.
-	 * By default, abstract events are not supported.
-	 *
-	 * @param abstractEventsSupport The value to set.
-	 */
-	public static void setAbstractEventsSupport(final boolean abstractEventsSupport) {
-		ABSTRACT_EVENTS_SUPPORT = abstractEventsSupport;
+	companion object {
+		/**
+		 * Allows [EventSystem]s to support abstract [Event]s. When [EventExecutor]
+		 * listening abstract event, it will be called when any of abstract event
+		 * inheritors are called. By default, abstract events are not supported.
+		 */
+		@JvmStatic
+		var ABSTRACT_EVENTS_SUPPORT = false
+		internal var nextExecutorId: ULong = 0u
 	}
 }

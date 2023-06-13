@@ -11,29 +11,25 @@ import kotlin.reflect.KClass
  * @author NassyLove
  * @since 0.0.1
  */
-class Task(action: Consumer<Event>, type: KClass<out Event>,
-           priority: ExecutorPriority = ExecutorPriority.DEFAULT, private var delay: Int = 0) :
-        EventExecutor(action, type.java, priority) {
+class Task<T : Event>(type: KClass<T>, priority: ExecutorPriority = ExecutorPriority.DEFAULT,
+					  private var delay: Int = 0, action: (T) -> Unit) :
+	EventExecutor<T>(type, priority, action) {
 
-    @Throws(EventExecutorException::class)
-    override fun accept(event: Event) {
-        if (delay == 0) { // TODO: delayless task class
-            super.accept(event)
-            container.detach(this)
-        } else {
-            delay--
-        }
-    }
+	override fun accept(event: Event) {
+		if (delay == 0) { // TODO: delayless task class
+			super.accept(event)
+			container!!.detach(this)
+		} else {
+			delay--
+		}
+	}
 
-    public override fun getName(): String {
-        return String.format("Task %s #%d", container.name, hashCode())
-    }
+	override val name = "Task ${container?.name} #${hashCode()}"
 
-    @Suppress("UNCHECKED_CAST")
-    companion object {
-        @JvmOverloads
-        @JvmStatic
-        fun <T : Event> of(action: Consumer<T>, type: Class<T>,
-                           priority: ExecutorPriority = ExecutorPriority.DEFAULT, delay: Int = 0) = Task(action as Consumer<Event>, type.kotlin, priority)
-    }
+	companion object {
+		@JvmStatic
+		fun <T : Event> task(type: Class<T>, priority: ExecutorPriority = ExecutorPriority.DEFAULT,
+							 delay: Int = 0, action: Consumer<T>) =
+			Task(type.kotlin, priority, delay, action::accept)
+	}
 }

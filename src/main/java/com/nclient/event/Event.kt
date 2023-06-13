@@ -7,6 +7,6 @@ package com.nclient.event
  * @since 0.0.1
  */
 open class Event {
-    open val cancelled: Boolean
-        get() = false
+	open val cancelled: Boolean
+		get() = false
 }

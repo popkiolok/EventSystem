@@ -9,15 +9,15 @@ import java.util.function.BooleanSupplier
  * @since 2.0.0
  */
 open class Cancellable : Event() {
-    override var cancelled: Boolean = false
+	override var cancelled: Boolean = false
 
-    fun cancel() {
-        cancelled = true
-    }
+	fun cancel() {
+		cancelled = true
+	}
 
-    fun cancelIf(condition: BooleanSupplier) {
-        if (condition.asBoolean) {
-            cancel()
-        }
-    }
+	fun cancelIf(condition: BooleanSupplier) {
+		if (condition.asBoolean) {
+			cancel()
+		}
+	}
 }
