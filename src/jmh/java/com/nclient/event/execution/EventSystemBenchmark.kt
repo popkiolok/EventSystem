@@ -12,25 +12,25 @@ import kotlin.math.roundToInt
  */
 @Suppress("UNUSED")
 open class EventSystemBenchmark {
-	@Fork(2, warmups = 1)
+	@Fork(1, warmups = 1)
 	@Benchmark
 	fun eventSystemWith30EventsAnd3or4ListenersForEachEventCallBenchmark(env: BenchmarkEnv) {
 		env.system.call(env.events.next())
 	}
 
-	@Fork(2, warmups = 1)
+	@Fork(1, warmups = 1)
 	@Benchmark
 	fun eventSystemCreateBenchmark() {
 		EventSystem {}
 	}
 
-	@Fork(2, warmups = 1)
+	@Fork(1, warmups = 1)
 	@Benchmark
 	fun eventSystemFirstCallBenchmark(env: BenchmarkEnv2) {
 		env.system.call(BenchmarkEnv2.AnEvent())
 	}
 
-	@Fork(2, warmups = 1)
+	@Fork(1, warmups = 1)
 	@Benchmark
 	fun eventSystemThatAlreadyContains5ListenersRegisterListenerBenchmark(env: BenchmarkEnv3) {
 		env.container.attach(Listener(BenchmarkEnv3.AnEvent::class) { _ -> })
@@ -47,7 +47,7 @@ open class EventSystemBenchmark {
 			javaClass.classes.forEach {
 				val numListeners = 3 + Math.random().roundToInt()
 				for (i in 0 until numListeners) {
-					container.attach(Listener(it.asSubclass(Event::class.java)) { _ -> })
+					container.attach(Listener(it.asSubclass(Event::class.java).kotlin) { _ -> })
 				}
 			}
 
@@ -111,7 +111,7 @@ open class EventSystemBenchmark {
 			system = EventSystem {}
 			container = EventContainer("BenchmarkContainer", system)
 			for (i in 0 until 5) {
-				container.attach(Listener(AnEvent::class.java, priorities.next()) { _ -> })
+				container.attach(Listener(AnEvent::class, priorities.next()) { _ -> })
 			}
 		}
 
