@@ -25,7 +25,7 @@ class EventExecutorTest {
 
 	@Test
 	fun `when accept event and throw exception in handling then executor throw EventExecutorException`() {
-		val executor = Listener(TestEvent::class.java) { _ -> throw TestCause() }
+		val executor = Listener(TestEvent::class) { _ -> throw TestCause() }
 		container.attach(executor)
 
 		assertThrows(EventExecutorException::class.java) {
@@ -35,7 +35,7 @@ class EventExecutorTest {
 
 	@Test
 	fun `when detach then event is not attached to event system`() {
-		val executor = Listener(TestEvent::class.java) { _ -> }
+		val executor = Listener(TestEvent::class) { _ -> }
 		container.attach(executor)
 
 		executor.detach()

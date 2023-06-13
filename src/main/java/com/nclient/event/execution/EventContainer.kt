@@ -1,10 +1,10 @@
 package com.nclient.event.execution
 
-import com.google.common.annotations.VisibleForTesting
 import com.nclient.event.Event
 import one.util.streamex.kotlin.streamEx
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
+import kotlin.reflect.KClass
 
 /**
  * Contains a group of [EventExecutor]s with the same [EventSystem].
@@ -15,8 +15,7 @@ import java.lang.reflect.Method
  * @since 1.0.0
  */
 @Suppress("UNCHECKED_CAST")
-class EventContainer @JvmOverloads constructor(val name: String,
-											   @VisibleForTesting internal val eventSystem: EventSystem,
+class EventContainer @JvmOverloads constructor(val name: String, val eventSystem: EventSystem,
 											   parent: EventContainer? = null) {
 	private val children: MutableCollection<EventContainer> = ArrayList()
 
@@ -57,7 +56,7 @@ class EventContainer @JvmOverloads constructor(val name: String,
 	 */
 	fun attachAll(methods: Map<Method, EventListener>, obj: Any) {
 		methods.forEach { (method, info) ->
-			val eventType = method.parameterTypes[0] as Class<Event>
+			val eventType = (method.parameterTypes[0] as Class<Event>).kotlin
 			val handle =
 				lookup.unreflect(method).bindTo(obj) // TODO lamba metafactory with private method
 			if (method.parameterCount == 1) {
@@ -115,3 +114,5 @@ fun getEventListeners(clazz: Class<*>): Map<Method, EventListener> =
 		m.isAccessible = true
 		m.getAnnotation(EventListener::class.java)
 	}
+
+fun getEventListener(clazz: KClass<*>) = getEventListeners(clazz.java)

@@ -30,7 +30,7 @@ class EventSystemTest {
 		initMocks(this);
 		EventContainer containerUnderTest = new EventContainer(eventSystemUnderTest);
 
-		testListener = new Listener<>(TestEvent.class, ExecutorPriority.DEFAULT,
+		testListener = Listener.listener(TestEvent.class, ExecutorPriority.DEFAULT,
 				event -> listenerCalled = true);
 		containerUnderTest.attach(testListener);
 
@@ -66,7 +66,7 @@ class EventSystemTest {
 		// Setup
 		final Event event = new TestEvent();
 		eventSystemUnderTest.attach(
-				new Listener<>(TestEvent.class, ExecutorPriority.HIGHEST, TestEvent::cancel));
+				Listener.listener(TestEvent.class, ExecutorPriority.HIGHEST, TestEvent::cancel));
 		// Run the test
 		final boolean result = eventSystemUnderTest.call(event);
 
@@ -79,11 +79,11 @@ class EventSystemTest {
 	@Test
 	void testCallOrder() {
 		final String[] ref = {""};
-		Stream.of(new Listener<>(TestEvent.class, ExecutorPriority.HIGHEST, event -> ref[0] += "1"),
-						new Listener<>(TestEvent.class, ExecutorPriority.HIGH, event -> ref[0] += "2"),
-						new Listener<>(TestEvent.class, ExecutorPriority.DEFAULT, event -> ref[0] += "3"),
-						new Listener<>(TestEvent.class, ExecutorPriority.LOW, event -> ref[0] += "4"),
-						new Listener<>(TestEvent.class, ExecutorPriority.LOWEST, event -> ref[0] += "5"))
+		Stream.of(Listener.listener(TestEvent.class, ExecutorPriority.HIGHEST, event -> ref[0] += "1"),
+						Listener.listener(TestEvent.class, ExecutorPriority.HIGH, event -> ref[0] += "2"),
+						Listener.listener(TestEvent.class, ExecutorPriority.DEFAULT, event -> ref[0] += "3"),
+						Listener.listener(TestEvent.class, ExecutorPriority.LOW, event -> ref[0] += "4"),
+						Listener.listener(TestEvent.class, ExecutorPriority.LOWEST, event -> ref[0] += "5"))
 				.forEach(eventSystemUnderTest::attach);
 
 		eventSystemUnderTest.call(new TestEvent());
@@ -141,7 +141,7 @@ class EventSystemTest {
 	void testSetAbstractEventsSupport() {
 		EventSystem.setABSTRACT_EVENTS_SUPPORT(true);
 
-		assertDoesNotThrow(() -> new Listener<>(Event.class, ExecutorPriority.DEFAULT, event -> {
+		assertDoesNotThrow(() -> Listener.listener(Event.class, ExecutorPriority.DEFAULT, event -> {
 		}));
 	}
 }

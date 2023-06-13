@@ -23,7 +23,7 @@ class EventContainerTest {
 	fun setup() {
 		eventSystem = EventSystem {}
 		containerUnderTest = EventContainer(eventSystem)
-		testListener = Listener(TestEvent::class.java, ExecutorPriority.DEFAULT) { _ -> }
+		testListener = Listener(TestEvent::class, ExecutorPriority.DEFAULT) { _ -> }
 	}
 
 	@Test
