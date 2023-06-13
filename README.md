@@ -1,7 +1,7 @@
 # EventSystem
 Dynamic event system with multiple instances support.
 
-## Features:
+## Features
 <ul>
 <li>Create multiple EventSystems.</li>
 <li>Control listeners in EventContainer.</li>
@@ -10,19 +10,19 @@ Dynamic event system with multiple instances support.
 <li>Create listeners in multiple ways.</li>
 </ul>
 
-## Adding event:
+## Adding event
 
 ```kotlin
-class SomeEvent : Event()
+class MyEvent(val hello: String) : Event()
 class SomeCancellableEvent : Cancellable()
 ```
 
-## Calling event:
+## Calling event
 
 ```kotlin
 val eventSystem = EventSystem {}
 // Events registered automatically on the first call
-eventSystem.call(SomeEvent())
+eventSystem.call(MyEvent())
 
 val event = SomeCancellableEvent()
 eventSystem.call(event)
@@ -31,11 +31,42 @@ if (event.cancelled) {
 }
 ```
 
-## Listening for event:
+## Listening for event
 
 ```kotlin
-val eventSystem = EventSystem {}
-val container = EventContainer("MyContainer", 
-container.attach
+val container = EventContainer("MyContainer", eventSystem)
+container.attach(Listener(MyEvent::class) { event -> println("MyEvent called with ${event.hello}.") })
+```
 
+```kotlin
+class MyClassWithEvent {
+    @EventListener
+    fun printHello(event: MyEvent) {
+        println("MyEvent called with ${event.hello}.")
+    }
+}
+
+class Main {
+    fun main() {
+        container.attachAll(getEventListeners(MyClassWithEvent::class), MyClassWithEvent())
+    }
+}
+```
+
+## Destroying listeners
+
+```kotlin
+container.detachAll()
+```
+
+```kotlin
+class SomeClassWithEvent {
+    @EventListener
+    fun printHello(event: MyEvent, self: EventExecutor<MyEvent>) {
+        println("MyEvent called with ${event.hello}.")
+        if (/* condition */) {
+            self.detach()
+        }
+    }
+}
 ```
