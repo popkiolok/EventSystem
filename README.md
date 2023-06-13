@@ -74,9 +74,9 @@ class SomeClassWithEvent {
 ## Benchmark
 
 ```
-Benchmark                                                                                Mode  Cnt         Score        Error  Units
-eventSystemCreateBenchmark                                         thrpt    5  33749765.427 � 113034.559  ops/s
-eventSystemFirstCallBenchmark                                      thrpt    5  10583192.825 �  41961.393  ops/s
-eventSystemThatAlreadyContains5ListenersRegisterListenerBenchmark  thrpt    5  20201957.656 � 229894.558  ops/s
-eventSystemWith30EventsAnd3or4ListenersForEachEventCallBenchmark   thrpt    5   9992935.003 � 146237.852  ops/s
+Benchmark                                                           Mode  Cnt         Score        Error  Units
+eventSystemCreateBenchmark                                         thrpt    5  33749765.427 ± 113034.559  ops/s
+eventSystemFirstCallBenchmark                                      thrpt    5  10583192.825 ±  41961.393  ops/s
+eventSystemThatAlreadyContains5ListenersRegisterListenerBenchmark  thrpt    5  20201957.656 ± 229894.558  ops/s
+eventSystemWith30EventsAnd3or4ListenersForEachEventCallBenchmark   thrpt    5   9992935.003 ± 146237.852  ops/s
 ```
