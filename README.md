@@ -80,3 +80,15 @@ eventSystemFirstCallBenchmark                                      thrpt    5  1
 eventSystemThatAlreadyContains5ListenersRegisterListenerBenchmark  thrpt    5  20201957.656 ± 229894.558  ops/s
 eventSystemWith30EventsAnd3or4ListenersForEachEventCallBenchmark   thrpt    5   9992935.003 ± 146237.852  ops/s
 ```
+
+## Gradle
+
+```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'com.github.InfazeMC:EventSystem:2.0.0'
+}
+```
